@@ -171,7 +171,7 @@ sub main()
 
   # perform matmul
   my $mat_results = mmult( $mat_values1, $mat_values2 );
-  
+
   # translate 2d arrays to 1d-somethings (I don't know how to code in perl - Chris)
   my @values1;
   my @values2;
@@ -192,13 +192,13 @@ sub main()
   print "\n\#define ARRAY_SIZE ".($opts{"size"}*$opts{"size"})." \n\n";
   print "\n\#define DIM_SIZE ".$opts{"size"}." \n\n";
   print "\ntypedef int data_t;";
-   
+
   printArray( "input1_data", \@values1 );
   printArray( "input2_data", \@values2 );
   printArray( "verify_data", \@results);
 
   print "\n#endif //__DATASET_H";
- 
+
 }
 
 main();

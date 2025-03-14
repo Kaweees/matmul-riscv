@@ -1,8 +1,0 @@
-{
-  "files.associations": {
-    "hello.h": "c",
-    "utils.h": "c",
-    "unistd.h": "c",
-    "fcntl.h": "c"
-  }
-}

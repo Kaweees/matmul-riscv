@@ -8,7 +8,7 @@ TARGET := matmul
 ## Architecture Section: change these variables based on your architecture
 # The architecture executable.
 ARCH := rv32i
-ARCH_PREFIX := riscv64-unknown-elf-
+ARCH_PREFIX := riscv32-none-elf-
 # The architecture flags.
 ARCH_FLAGS := -march=$(ARCH) -mabi=ilp32
 

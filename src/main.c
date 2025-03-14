@@ -4,8 +4,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "../include/hello.h"
+#include "../include/matmul.h"
 #include "../include/utils.h"
+#include "../include/dataset.h"
 
 /**
  * @brief Program entry point
@@ -16,7 +17,9 @@
  */
 int main(int argc, char* argv[]) {
   if (argc == MIN_ARGS) {
-    hello();
+    static data_t results_data[ARRAY_SIZE];
+    matsum(DIM_SIZE, DIM_SIZE, input1_data, input2_data, results_data);
+    compare_matrices(DIM_SIZE, results_data, verify_data);
   } else {
     usage(*argv);
   }
