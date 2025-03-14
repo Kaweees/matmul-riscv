@@ -17,17 +17,23 @@ ARCH_FLAGS := -march=$(ARCH) -mabi=ilp32
 # The compiler executable.
 CC := $(ARCH_PREFIX)gcc
 # The compiler flags.
-CFLAGS := -Wall
+CC_FLAGS := -Wall
 # The linker executable.
 LD := $(ARCH_PREFIX)ld
 # The linker flags.
-LDFLAGS := -Wall
+LD_FLAGS := -Wall
 # The objcopy executable.
 OBJ_COPY := $(ARCH_PREFIX)objcopy
 # The objcopy flags.
-OBJ_COPY_FLAGS := -O binary -R .eeprom
+OBJ_COPY_FLAGS := -O binary --only-section=.data* --only-section=.text*
 # The objdump executable.
 OBJ_DUMP := $(ARCH_PREFIX)objdump
+# The objdump flags.
+OBJ_DUMP_FLAGS := --no-show-raw-insn -S -s
+# The hexdump executable.
+HEXDUMP := hexdump
+# The hexdump flags.
+HEXDUMP_FLAGS := -v -e '"%08x\n"'
 # The shell executable.
 SHELL := /bin/bash
 
@@ -43,13 +49,13 @@ DEBUGGER := gdb
 DEBUGGER_FLAGS :=
 
 # The name of the test input file
-TEST_INPUT := test_input.txt
+TEST_INPUT :=
 # The name of the test output file
-TEST_OUTPUT := test_output.tar
+TEST_OUTPUT :=
 # The name of the reference executable
-REF_EXE := ~pn-cs357/demos/mytar
+REF_EXE :=
 # The name of the reference output file
-REF_OUTPUT := ref_output.tar
+REF_OUTPUT :=
 
 ## Output Section: change these variables based on your output
 # -----------------------------------------------------------------------------
@@ -72,13 +78,33 @@ SRCS := $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/*.s) $(wildcard $(SRC_D
 OBJS := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(filter %.c,$(SRCS))) \
              $(patsubst $(SRC_DIR)/%.s, $(OBJ_DIR)/%.o, $(filter %.s,$(SRCS))) \
              $(patsubst $(SRC_DIR)/%.S, $(OBJ_DIR)/%.o, $(filter %.S,$(SRCS)))
+
+ifneq ($(filter %.c,$(SRCS)),)
+CC_FLAGS += -O3 $(ARCH_FLAGS) -g
+else
+CC_FLAGS += -O0 $(ARCH_FLAGS)
+endif
 # executable file to build
 BINS := $(BUILD_DIR)$(TARGET)
+# binary file to convert to hex
+TARGET_BIN := $(BINS).bin
+# elf file to convert to hex
+TARGET_ELF := $(BINS).elf
+# hex file to flash
+TARGET_HEX := $(BINS).hex
+# memory image file
+TARGET_TXT  := $(BINS).txt
+# disassembly/dump file depending on whether C code is present
+ifneq ($(filter %.c,$(SRCS)),)
+TARGET_DUMP:= $(BINS).dump
+else
+TARGET_DUMP:= $(BINS).dis
+endif
 
 ## Command Section: change these variables based on your commands
 # -----------------------------------------------------------------------------
 # Targets
-.PHONY: all $(TARGET) test clean debug help
+.PHONY: all $(TARGET) dirs test clean debug help
 
 # Default target: build the program
 all: $(BINS)
@@ -87,14 +113,40 @@ all: $(BINS)
 $(TARGET): $(BINS)
 
 # Rule to build the program from linked object files
-$(BINS): $(OBJS)
-	@mkdir -p $(BUILD_DIR)
-	$(LD) $(LDFLAGS) $(OBJS) -o $(BINS)
+$(BINS): dirs $(TARGET_TXT) $(TARGET_DUMP)
 
 # Rule to compile source files into object files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-	@mkdir -p $(OBJ_DIR)
-	$(CC) $(CFLAGS) $(INCS) -c $< -o $@
+	$(CC) $(CC_FLAGS) $(INCS) -c $< -o $@
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.s
+	$(CC) $(CC_FLAGS) $(INCS) -c $< -o $@
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.S
+	$(CC) $(CC_FLAGS) $(INCS) -c $< -o $@
+
+# Rule to link object files into an ELF file
+$(TARGET_ELF): ${OBJS}
+ifneq ($(filter %.c,$(SRCS)),)
+	$(CC)  -o $@ $^ -T link.ld $(CC_FLAGS)
+else
+	$(CC) -o $@ $^ -T link.ld -nostdlib -nostartfiles -mcmodel=medany $(CC_FLAGS)
+endif
+
+# Rule to convert an ELF file into a binary file
+$(TARGET_DUMP): $(TARGET_ELF)
+ifneq ($(filter %.c,$(SRCS)),)
+	$(OBJ_DUMP) $(OBJ_DUMP_FLAGS) $< > $@
+else
+	$(OBJ_DUMP) -d $< > $@
+endif
+
+$(TARGET_BIN): $(TARGET_ELF)
+	$(OBJ_COPY) $(OBJ_COPY_FLAGS) $< $@
+
+# convert to an ASCII hex file for OTTER memory
+$(TARGET_TXT): $(TARGET_BIN)
+	$(HEXDUMP) $(HEXDUMP_FLAGS) $< > $@
 
 # Test target: build and test the program against sample input
 test: $(TARGET)
@@ -105,6 +157,11 @@ test: $(TARGET)
 # $(MEMCHECK) $(MEMCHECK_FLAGS) $(BINS)
 # @echo "Comparing output to $(REF_EXE):"
 # diff <($(BINS)) <($(REF_EXE))
+
+# Directory target: create the build and object directories
+dirs:
+	@mkdir -p $(BUILD_DIR)
+	@mkdir -p $(OBJ_DIR)
 
 # Clean target: remove build artifacts and non-essential files
 clean:
