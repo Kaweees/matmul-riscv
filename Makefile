@@ -3,18 +3,31 @@
 
 ## Program Section: change these variables based on your program
 # The name of the program to build.
-TARGET := targetname
+TARGET := matmul
+
+## Architecture Section: change these variables based on your architecture
+# The architecture executable.
+ARCH := rv32i
+ARCH_PREFIX := riscv64-unknown-elf-
+# The architecture flags.
+ARCH_FLAGS := -march=$(ARCH) -mabi=ilp32
 
 ## Compiler Section: change these variables based on your compiler
 # -----------------------------------------------------------------------------
 # The compiler executable.
-CC := gcc
+CC := $(ARCH_PREFIX)gcc
 # The compiler flags.
-CFLAGS := -Wall -Werror -Wpedantic -std=gnu99
+CFLAGS := -Wall
 # The linker executable.
-LD := gcc
+LD := $(ARCH_PREFIX)ld
 # The linker flags.
-LDFLAGS := -Wall -Werror -Wpedantic -std=gnu99
+LDFLAGS := -Wall
+# The objcopy executable.
+OBJ_COPY := $(ARCH_PREFIX)objcopy
+# The objcopy flags.
+OBJ_COPY_FLAGS := -O binary -R .eeprom
+# The objdump executable.
+OBJ_DUMP := $(ARCH_PREFIX)objdump
 # The shell executable.
 SHELL := /bin/bash
 
@@ -49,21 +62,23 @@ INC_DIR := $(TOP_DIR)/include
 # directory to locate object files
 OBJ_DIR := $(TOP_DIR)/obj
 # directory to place build artifacts
-BUILD_DIR := $(TOP_DIR)/target/release/
+BUILD_DIR := $(TOP_DIR)/target/$(ARCH)/release/
 
 # header files to preprocess
 INCS := -I$(INC_DIR)
 # source files to compile
-SRCS := $(wildcard $(SRC_DIR)/*.c)
+SRCS := $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/*.s) $(wildcard $(SRC_DIR)/*.S)
 # object files to link
-OBJS := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRCS))
+OBJS := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(filter %.c,$(SRCS))) \
+             $(patsubst $(SRC_DIR)/%.s, $(OBJ_DIR)/%.o, $(filter %.s,$(SRCS))) \
+             $(patsubst $(SRC_DIR)/%.S, $(OBJ_DIR)/%.o, $(filter %.S,$(SRCS)))
 # executable file to build
 BINS := $(BUILD_DIR)$(TARGET)
 
 ## Command Section: change these variables based on your commands
 # -----------------------------------------------------------------------------
 # Targets
-.PHONY: all $(TARGET) test clean debug help handin latedays testcases
+.PHONY: all $(TARGET) test clean debug help
 
 # Default target: build the program
 all: $(BINS)
@@ -73,12 +88,12 @@ $(TARGET): $(BINS)
 
 # Rule to build the program from linked object files
 $(BINS): $(OBJS)
-	@mkdir -p $(BUILD_DIR) # Create the build directory if it doesn't exist
+	@mkdir -p $(BUILD_DIR)
 	$(LD) $(LDFLAGS) $(OBJS) -o $(BINS)
 
 # Rule to compile source files into object files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-	@mkdir -p $(OBJ_DIR) # Create the object directory if it doesn't exist
+	@mkdir -p $(OBJ_DIR)
 	$(CC) $(CFLAGS) $(INCS) -c $< -o $@
 
 # Test target: build and test the program against sample input
