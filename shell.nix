@@ -1,4 +1,6 @@
-{ pkgs ? import <nixpkgs> {} }:
+{
+  pkgs ? import <nixpkgs> { },
+}:
 
 let
   # Create a custom package set for cross-compilation to RISC-V
@@ -17,7 +19,7 @@ let
 
   # Use overrideAttrs to directly modify the derivation attributes
   customRiscvGcc = riscvPkgs.buildPackages.gcc.overrideAttrs (oldAttrs: {
-    configureFlags = (oldAttrs.configureFlags or []) ++ [
+    configureFlags = (oldAttrs.configureFlags or [ ]) ++ [
       "--enable-multilib"
       "--with-multilib-generator=rv32i-ilp32--"
     ];
@@ -25,11 +27,10 @@ let
 in
 pkgs.mkShell {
   # Include both the custom cross-compiler and other tools you might need
-  buildInputs = [
+  buildInputs = with pkgs; [
     customRiscvGcc
-    # Additional tools that might be helpful
-    pkgs.gnumake
-    pkgs.python3  # Useful for any build scripts
+    nixfmt # Nix formatter
+    gnumake # GNU Make
   ];
 
   # Set up environment variables
