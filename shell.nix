@@ -8,8 +8,6 @@ let
     crossSystem = {
       config = "riscv32-none-elf";
       libc = "newlib";
-      # Specify the exact RISC-V architecture features you need
-      # This matches your Makefile TARGET_ARCH settings
       gcc = {
         arch = "rv32i";
         abi = "ilp32";
@@ -35,7 +33,6 @@ pkgs.mkShell {
 
   # Set up environment variables
   shellHook = ''
-    export RISCV_PREFIX="riscv32-none-elf-"
     export PATH=${customRiscvGcc}/bin:$PATH
     echo "RISC-V GCC Cross-compiler environment loaded!"
     echo "Compiler version: $(riscv32-none-elf-gcc --version | head -n 1)"

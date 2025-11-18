@@ -152,12 +152,6 @@ $(TARGET_TXT): $(TARGET_BIN)
 test: $(TARGET)
 	$(BINS) -c -f $(TEST_OUTPUT) $(TEST_INPUT)
 
-# @echo "Testing $(BINS)..."
-# @echo "Testing memory leaks..."
-# $(MEMCHECK) $(MEMCHECK_FLAGS) $(BINS)
-# @echo "Comparing output to $(REF_EXE):"
-# diff <($(BINS)) <($(REF_EXE))
-
 # Directory target: create the build and object directories
 dirs:
 	@mkdir -p $(BUILD_DIR)
@@ -165,13 +159,13 @@ dirs:
 
 # Clean target: remove build artifacts and non-essential files
 clean:
-	rm -rf $(OBJ_DIR) $(BIN_DIR)
-	rm -rf $(BUILD_DIR)
+	@rm -rf $(OBJ_DIR) $(BIN_DIR)
+	@rm -rf $(BUILD_DIR)
 
 # Debug target: use a debugger to debug the program
 debug: $(BINS)
 	@echo "Debugging $(TARGET)..."
-	$(DEBUGGER) $(DEBUGGER_FLAGS) $(BINS)
+	@$(DEBUGGER) $(DEBUGGER_FLAGS) $(BINS)
 
 # Help target: display usage information
 help:
